@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "YouTube Activity Tracker",
+  "version": "1.0",
+  "description": "Track your YouTube watch time, categories, learning progress, and playlist completion.",
+  "permissions": [
+    "storage",
+    "tabs",
+    "scripting"
+  ],
+  "host_permissions": [
+    "*://*.youtube.com/*",
+    "http://localhost:3001/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.youtube.com/*"],
+      "js": ["content.js"]
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Activity Tracker"
+  }
+}
