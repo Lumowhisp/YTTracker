@@ -22,6 +22,4 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     .then(data => console.log('Playlist logged:', data))
     .catch(err => console.error('Error logging playlist:', err));
   }
-  
-  return true;
 });

@@ -19,6 +19,7 @@ mongoose.connect(MONGO_URI)
 // API endpoint to log activity
 app.post('/api/track/activity', async (req, res) => {
   try {
+    console.log('Received activity track request:', req.body);
     const { videoId, title, channel, category, watchTimeSeconds, isLearning } = req.body;
     
     // Find if activity exists for today for this video
@@ -47,6 +48,7 @@ app.post('/api/track/activity', async (req, res) => {
 // API endpoint to log playlist progress
 app.post('/api/track/playlist', async (req, res) => {
   try {
+    console.log('Received playlist track request:', req.body);
     const { playlistId, topic, totalVideos, watchedVideos } = req.body;
     let playlist = await PlaylistProgress.findOne({ playlistId });
     

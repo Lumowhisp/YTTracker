@@ -16,20 +16,23 @@ const getCategory = () => {
   return categoryElement ? categoryElement.content : 'Entertainment';
 };
 
-const trackWatchTime = () => {
+const trackWatchTime = (forceSend = false) => {
   const video = document.querySelector('video');
   if (!video || video.paused || video.ended) {
     lastTrackedTime = Date.now();
     return;
   }
 
-  const titleEl = document.querySelector('h1.ytd-watch-metadata yt-formatted-string') || document.querySelector('h1.title yt-formatted-string') || document.querySelector('h1.ytd-watch-metadata');
-  const channelEl = document.querySelector('ytd-channel-name .yt-simple-endpoint') || document.querySelector('#text.ytd-channel-name a');
+  const titleEl = document.querySelector('h1.ytd-watch-metadata yt-formatted-string, h1.title yt-formatted-string');
+  const title = titleEl ? (titleEl.innerText || titleEl.textContent) : document.title.replace(' - YouTube', '');
   
-  if (!titleEl || !channelEl) return;
-
-  const title = titleEl.innerText || titleEl.textContent;
-  const channel = channelEl.innerText || channelEl.textContent;
+  const getChannelName = () => {
+    const el = document.querySelector('#owner ytd-channel-name a') || 
+               document.querySelector('ytd-video-owner-renderer ytd-channel-name a') || 
+               document.querySelector('#upload-info ytd-channel-name a');
+    return el ? (el.innerText || el.textContent).trim() : 'Unknown Channel';
+  };
+  const channel = getChannelName();
   const category = getCategory();
   
   const urlParams = new URLSearchParams(window.location.search);
@@ -41,7 +44,8 @@ const trackWatchTime = () => {
   const now = Date.now();
   const timeSpentSeconds = (now - lastTrackedTime) / 1000;
 
-  if (timeSpentSeconds >= 5) {
+  // Accumulate time in 30-second chunks to avoid spamming the backend
+  if (timeSpentSeconds >= 30 || (forceSend && timeSpentSeconds >= 2)) {
     lastTrackedTime = now;
     console.log(`YouTube Activity Tracker: Logged ${Math.floor(timeSpentSeconds)}s of "${title}"`);
 
@@ -55,10 +59,6 @@ const trackWatchTime = () => {
           category,
           watchTimeSeconds: Math.floor(timeSpentSeconds),
           isLearning: isLearningCategory(category, title)
-        }
-      }, (response) => {
-        if (chrome.runtime.lastError) {
-          console.warn("YouTube Activity Tracker Error:", chrome.runtime.lastError);
         }
       });
     } catch(err) {}
@@ -94,7 +94,7 @@ const trackWatchTime = () => {
   }
 };
 
-// Check every 5 seconds, more reliable than play/pause events on YouTube
+// Check every 5 seconds to ensure accuracy, but we only send data every 30s
 setInterval(() => {
   if (document.visibilityState === 'visible') {
     trackWatchTime();
@@ -102,3 +102,8 @@ setInterval(() => {
     lastTrackedTime = Date.now();
   }
 }, 5000);
+
+// Flush any remaining accumulated time when the user closes the tab or navigates away
+window.addEventListener('beforeunload', () => {
+  trackWatchTime(true); 
+});
