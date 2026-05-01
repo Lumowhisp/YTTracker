@@ -3,7 +3,7 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, 
 import { Clock, BookOpen, MonitorPlay, Sparkles, TrendingUp, Calendar, Search, Target, Flame, Play } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const API = 'http://localhost:3001/api';
+const API = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 const COLORS = ['#FF0000', '#3EA6FF', '#2BA640', '#F2A900', '#A855F7', '#EC4899', '#06B6D4', '#F43F5E'];
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const QUOTES = [
