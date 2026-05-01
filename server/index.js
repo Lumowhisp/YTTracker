@@ -12,6 +12,17 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Root health check
+app.get('/', (req, res) => {
+  res.send(`
+    <div style="font-family:sans-serif; text-align:center; padding-top:100px;">
+      <h1 style="color:#FF0000;">🚀 YouTube Tracker API is Live</h1>
+      <p style="color:#666;">Version 2.0.0 (Premium UI Update)</p>
+      <p>Endpoints are available at <code>/api/*</code></p>
+    </div>
+  `);
+});
+
 // ─── ML Classifier ───────────────────────────────────────────────────────────
 const { initializeModel, classifyVideo } = require('./ml/classifier');
 initializeModel();
