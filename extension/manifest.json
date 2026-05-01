@@ -1,12 +1,13 @@
 {
   "manifest_version": 3,
   "name": "YouTube Activity Tracker",
-  "version": "1.0",
-  "description": "Track your YouTube watch time, categories, learning progress, and playlist completion.",
+  "version": "2.0",
+  "description": "Industry-grade YouTube activity tracking: watch time, categories, search queries, learning progress, and productivity insights.",
   "permissions": [
     "storage",
     "tabs",
-    "scripting"
+    "alarms",
+    "notifications"
   ],
   "host_permissions": [
     "*://*.youtube.com/*",
@@ -18,11 +19,12 @@
   "content_scripts": [
     {
       "matches": ["*://*.youtube.com/*"],
-      "js": ["content.js"]
+      "js": ["content.js"],
+      "run_at": "document_idle"
     }
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Activity Tracker"
+    "default_title": "YouTube Activity Tracker"
   }
 }

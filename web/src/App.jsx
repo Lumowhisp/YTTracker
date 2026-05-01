@@ -8,12 +8,14 @@ function App() {
   return (
     <Router>
       <nav className="navbar">
-        <div className="container flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-4" style={{ textDecoration: 'none', color: 'white' }}>
-            <Activity color="#8b5cf6" size={28} />
-            <h2>Activity<span className="gradient-text">Tracker</span></h2>
+        <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none', color: 'white' }}>
+            <Activity color="#8b5cf6" size={26} />
+            <h2 style={{ fontFamily: 'Outfit, sans-serif', fontSize: '20px', fontWeight: 700, margin: 0 }}>
+              Activity<span className="gradient-text">Tracker</span>
+            </h2>
           </Link>
-          <div className="flex gap-8 items-center">
+          <div style={{ display: 'flex', gap: '32px', alignItems: 'center' }}>
             <Link to="/" className="nav-link">Home</Link>
             <Link to="/dashboard" className="nav-link">Dashboard</Link>
           </div>
