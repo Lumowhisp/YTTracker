@@ -81,3 +81,18 @@ zenModeToggle.addEventListener('change', (e) => {
   const isEnabled = e.target.checked;
   chrome.storage.local.set({ zenMode: isEnabled });
 });
+
+// Web Tracking Toggle Logic
+const webTrackingToggle = document.getElementById('webTrackingToggle');
+
+// Load current state
+chrome.storage.local.get(['webTracking'], (result) => {
+  webTrackingToggle.checked = result.webTracking !== false; // Default: enabled
+});
+
+// Save state on change
+webTrackingToggle.addEventListener('change', (e) => {
+  const isEnabled = e.target.checked;
+  chrome.storage.local.set({ webTracking: isEnabled });
+});
+

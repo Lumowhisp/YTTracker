@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
+import GrindMode from './pages/GrindMode';
 import { Activity } from 'lucide-react';
 
 function App() {
@@ -18,6 +19,7 @@ function App() {
           <div style={{ display: 'flex', gap: '32px', alignItems: 'center' }}>
             <Link to="/" className="nav-link">Home</Link>
             <Link to="/dashboard" className="nav-link">Dashboard</Link>
+            <Link to="/grind" className="nav-link" style={{ color: '#10b981', fontWeight: 600 }}>Grind Mode</Link>
           </div>
         </div>
       </nav>
@@ -25,6 +27,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/grind" element={<GrindMode />} />
         </Routes>
       </main>
     </Router>

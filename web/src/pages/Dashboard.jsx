@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, CartesianGrid } from 'recharts';
-import { Clock, BookOpen, MonitorPlay, Sparkles, TrendingUp, Calendar, Search, Target, Flame, Play } from 'lucide-react';
+import { Clock, BookOpen, MonitorPlay, Sparkles, TrendingUp, Calendar, Search, Target, Flame, Play, Activity } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
@@ -252,6 +252,9 @@ export default function Dashboard() {
   const [recent, setRecent] = useState([]);
   const [searches, setSearches] = useState([]);
   const [playlists, setPlaylists] = useState([]);
+  const [webDomains, setWebDomains] = useState([]);
+  const [webCategories, setWebCategories] = useState([]);
+  const [customTasks, setCustomTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [quoteIdx, setQuoteIdx] = useState(0);
@@ -263,7 +266,7 @@ export default function Dashboard() {
         if (!r.ok) throw new Error(`${r.status}`);
         return r.json();
       });
-      const [ov, tr, hm, ch, cat, rec, srch, pl] = await Promise.all([
+      const [ov, tr, hm, ch, cat, rec, srch, pl, wd, wc, ct] = await Promise.all([
         safeFetch(`${API}/stats/overview?range=${range}`),
         safeFetch(`${API}/stats/trends?days=${range==='today'?1:range==='7d'?7:range==='30d'?30:90}`),
         safeFetch(`${API}/stats/heatmap?range=${range}`),
@@ -272,9 +275,13 @@ export default function Dashboard() {
         safeFetch(`${API}/stats/recent?limit=10`),
         safeFetch(`${API}/stats/searches?limit=10`),
         safeFetch(`${API}/stats/playlists`),
+        safeFetch(`${API}/stats/web-domains?range=${range}`),
+        safeFetch(`${API}/stats/web-categories?range=${range}`),
+        safeFetch(`${API}/stats/custom-tasks?range=${range}`),
       ]);
       setOverview(ov); setTrends(tr); setHeatmapData(hm); setChannels(ch);
       setCategories(cat); setRecent(rec); setSearches(srch); setPlaylists(pl);
+      setWebDomains(wd); setWebCategories(wc); setCustomTasks(ct);
     } catch(e) {
       console.error('Fetch error:', e);
       setError('Could not load data. Make sure the server is running and the database is connected.');
@@ -447,6 +454,53 @@ export default function Dashboard() {
         </motion.div>
       </div>
 
+      {/* Web Activity */}
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:24 }}>
+        <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay:0.75}} className="glass-card">
+          <div className="section-title"><Clock size={18} color="#06B6D4" /> Top Web Domains</div>
+          {webDomains.length === 0 ? <p style={{color:'#64748b', textAlign:'center', padding:24}}>No web data yet</p> : (
+            <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+              {webDomains.slice(0,6).map((wd, i) => (
+                <div key={i}>
+                  <div style={{ display:'flex', justifyContent:'space-between', fontSize:13, marginBottom:4 }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:8, overflow:'hidden' }}>
+                      <img src={`https://www.google.com/s2/favicons?domain=${wd.domain}&sz=32`} alt="" style={{ width:16, height:16, borderRadius:4 }} />
+                      <span style={{ fontWeight:500, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:'200px' }}>{wd.domain}</span>
+                    </div>
+                    <span style={{ color:'#F1F1F1', fontWeight:600 }}>{wd.minutes} min</span>
+                  </div>
+                  <div style={{ height:6, background:'rgba(255,255,255,0.04)', borderRadius:3, overflow:'hidden' }}>
+                    <motion.div initial={{width:0}} animate={{width:`${(wd.minutes/Math.max(1, webDomains[0]?.minutes))*100}%`}}
+                      transition={{duration:1, delay:0.2+i*0.1}}
+                      style={{ height:'100%', background:`linear-gradient(to right, ${COLORS[(i+2)%COLORS.length]}, ${COLORS[(i+3)%COLORS.length]})`, borderRadius:3 }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </motion.div>
+
+        <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay:0.8}} className="glass-card">
+          <div className="section-title"><Sparkles size={18} color="#A855F7" /> Web Categories</div>
+          {webCategories.length === 0 ? <p style={{color:'#64748b', textAlign:'center', padding:24}}>No web categories yet</p> : (
+            <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+              {webCategories.map((wc, i) => (
+                 <div key={i} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'8px 12px', background:'rgba(39,39,39,0.5)', borderRadius:8, border:'1px solid rgba(255,255,255,0.04)' }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                      <div style={{ width:10, height:10, borderRadius:3, background:COLORS[(i+4)%COLORS.length] }} />
+                      <span style={{ fontSize:14, fontWeight:500 }}>{wc.name}</span>
+                    </div>
+                    <div style={{ display:'flex', gap:16, alignItems:'center', fontSize:13 }}>
+                       <span style={{ color:'#AAAAAA' }}>{wc.domainCount} sites</span>
+                       <span style={{ color:'#F1F1F1', fontWeight:600 }}>{wc.minutes} min</span>
+                    </div>
+                 </div>
+              ))}
+            </div>
+          )}
+        </motion.div>
+      </div>
+
       {/* Playlists */}
       {playlists.length > 0 && (
         <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{delay:0.8}} className="glass-card" style={{ marginBottom:24 }}>
@@ -466,6 +520,37 @@ export default function Dashboard() {
                   <div style={{ textAlign:'right', minWidth:60 }}>
                     <div style={{ fontFamily:'Outfit', fontSize:20, fontWeight:700, color: '#F1F1F1' }}>{pct}%</div>
                     <div style={{ fontSize:11, color:'#64748b' }}>{pl.watchedVideos}/{pl.totalVideos}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </motion.div>
+      )}
+
+      {/* Grind Report */}
+      {customTasks.length > 0 && (
+        <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{delay:0.85}} className="glass-card" style={{ marginBottom:24 }}>
+          <div className="section-title"><Activity size={18} color="#10b981" /> Grind Report</div>
+          <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+            {customTasks.map((ct, i) => {
+              const h = Math.floor(ct.totalSeconds / 3600);
+              const m = Math.floor((ct.totalSeconds % 3600) / 60);
+              const timeStr = h > 0 ? `${h}h ${m}m` : `${m}m`;
+              const maxCt = customTasks.length > 0 ? customTasks[0].totalSeconds : 1;
+              const pct = Math.round((ct.totalSeconds / maxCt) * 100);
+              return (
+                <div key={i} style={{ display:'flex', alignItems:'center', gap:16, padding:12, borderRadius:12, background:'rgba(15,23,42,0.6)', border:'1px solid rgba(255,255,255,0.04)' }}>
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontWeight:600, fontSize:15, marginBottom:8, color: '#f8fafc' }}>{ct.title}</div>
+                    <div style={{ height:6, background:'rgba(0,0,0,0.3)', borderRadius:3, overflow:'hidden', boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.5)' }}>
+                      <motion.div initial={{width:0}} animate={{width:`${pct}%`}} transition={{duration:1, type: 'spring'}}
+                        style={{ height:'100%', background:'linear-gradient(90deg, #10b981, #34d399)', borderRadius:3 }} />
+                    </div>
+                  </div>
+                  <div style={{ textAlign:'right', minWidth:80 }}>
+                    <div style={{ fontFamily:'Outfit', fontSize:22, fontWeight:700, color: '#10b981' }}>{timeStr}</div>
+                    <div style={{ fontSize:12, color:'#94a3b8' }}>{ct.sessions} session{ct.sessions !== 1 ? 's' : ''}</div>
                   </div>
                 </div>
               );

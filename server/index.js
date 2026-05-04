@@ -7,6 +7,8 @@ const Activity = require('./models/Activity');
 const PlaylistProgress = require('./models/PlaylistProgress');
 const SearchQuery = require('./models/SearchQuery');
 const Goal = require('./models/Goal');
+const WebActivity = require('./models/WebActivity');
+const CustomTask = require('./models/CustomTask');
 
 const app = express();
 app.use(cors());
@@ -440,6 +442,143 @@ app.get('/api/stats/daily', async (req, res) => {
       categoryData: Object.entries(categoryStats).map(([name, value]) => ({ name, value }))
     });
   } catch (error) { res.status(500).json({ error: error.message }); }
+});
+
+// ─── WEB ACTIVITY TRACKING ──────────────────────────────────────────────────
+
+app.post('/api/track/web-activity', async (req, res) => {
+  try {
+    const { domain, url, title, category, activeSeconds } = req.body;
+    if (!domain) return res.status(400).json({ error: 'domain required' });
+
+    const now = new Date();
+    const today = new Date(now);
+    today.setHours(0, 0, 0, 0);
+
+    // Aggregate per domain per day
+    let entry = await WebActivity.findOne({ domain, date: { $gte: today } });
+    if (entry) {
+      entry.activeSeconds += activeSeconds;
+      if (title) entry.title = title;
+      if (url) entry.url = url;
+      await entry.save();
+    } else {
+      entry = new WebActivity({
+        domain, url, title, category,
+        activeSeconds,
+        date: now,
+        hour: now.getHours(),
+        dayOfWeek: now.getDay()
+      });
+      await entry.save();
+    }
+
+    console.log(`🌐 Web: ${domain} +${activeSeconds}s (${category})`);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Top domains by active time
+app.get('/api/stats/web-domains', async (req, res) => {
+  try {
+    const startDate = getDateRange(req.query.range);
+    const match = startDate ? { date: { $gte: startDate } } : {};
+
+    const domains = await WebActivity.aggregate([
+      { $match: match },
+      { $group: { 
+        _id: '$domain', 
+        totalSeconds: { $sum: '$activeSeconds' }, 
+        category: { $first: '$category' },
+        lastTitle: { $last: '$title' }
+      }},
+      { $sort: { totalSeconds: -1 } },
+      { $limit: 20 }
+    ]);
+    res.json(domains.map(d => ({ 
+      domain: d._id, 
+      minutes: Math.round(d.totalSeconds / 60), 
+      seconds: d.totalSeconds,
+      category: d.category,
+      title: d.lastTitle
+    })));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Web categories breakdown
+app.get('/api/stats/web-categories', async (req, res) => {
+  try {
+    const startDate = getDateRange(req.query.range);
+    const match = startDate ? { date: { $gte: startDate } } : {};
+
+    const categories = await WebActivity.aggregate([
+      { $match: match },
+      { $group: { 
+        _id: '$category', 
+        totalSeconds: { $sum: '$activeSeconds' },
+        domains: { $addToSet: '$domain' }
+      }},
+      { $sort: { totalSeconds: -1 } }
+    ]);
+    res.json(categories.map(c => ({ 
+      name: c._id || 'Other', 
+      minutes: Math.round(c.totalSeconds / 60),
+      seconds: c.totalSeconds,
+      domainCount: c.domains.length
+    })));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ─── CUSTOM TASK TRACKING ───────────────────────────────────────────────────
+
+app.post('/api/track/custom-task', async (req, res) => {
+  try {
+    const { title, durationSeconds } = req.body;
+    if (!title) return res.status(400).json({ error: 'title required' });
+
+    const task = new CustomTask({ title, durationSeconds });
+    await task.save();
+    
+    console.log(`⏱️ Custom Task: "${title}" +${durationSeconds}s`);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/stats/custom-tasks', async (req, res) => {
+  try {
+    const startDate = getDateRange(req.query.range || '7d');
+    const match = startDate ? { date: { $gte: startDate } } : {};
+
+    const aggregated = await CustomTask.aggregate([
+      { $match: match },
+      { $group: { 
+        _id: '$title', 
+        totalSeconds: { $sum: '$durationSeconds' },
+        sessions: { $sum: 1 },
+        lastSession: { $max: '$date' }
+      }},
+      { $sort: { totalSeconds: -1 } },
+      { $limit: 10 }
+    ]);
+    
+    res.json(aggregated.map(t => ({
+      title: t._id,
+      totalSeconds: t.totalSeconds,
+      minutes: Math.round(t.totalSeconds / 60),
+      sessions: t.sessions,
+      lastSession: t.lastSession
+    })));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // ─── START ───────────────────────────────────────────────────────────────────

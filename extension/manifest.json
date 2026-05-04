@@ -1,17 +1,17 @@
 {
   "manifest_version": 3,
-  "name": "YouTube Activity Tracker",
-  "version": "2.0",
-  "description": "Industry-grade YouTube activity tracking: watch time, categories, search queries, learning progress, and productivity insights.",
+  "name": "Activity Tracker",
+  "version": "3.0",
+  "description": "Complete digital wellbeing tracker: YouTube watch time, full web activity monitoring, productivity insights, and ML-powered classification.",
   "permissions": [
     "storage",
     "tabs",
     "alarms",
-    "notifications"
+    "notifications",
+    "activeTab"
   ],
   "host_permissions": [
-    "*://*.youtube.com/*",
-    "http://localhost:3001/*"
+    "<all_urls>"
   ],
   "background": {
     "service_worker": "background.js"
@@ -21,10 +21,15 @@
       "matches": ["*://*.youtube.com/*"],
       "js": ["content.js"],
       "run_at": "document_idle"
+    },
+    {
+      "matches": ["<all_urls>"],
+      "js": ["overlay.js"],
+      "run_at": "document_idle"
     }
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "YouTube Activity Tracker"
+    "default_title": "Activity Tracker"
   }
 }
